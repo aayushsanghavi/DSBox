@@ -3,4 +3,4 @@
 application.py
 *.csv
 *.html
-
+**/__pycache__/*

@@ -1,6 +1,9 @@
 from pandas import DataFrame
 from pandas_profiling import ProfileReport
 
+from dsbox.data.visualisation import plot_feature_correlation
+from dsbox.utils.logging import get_logger, LoggingLevel
+
 
 class Data:
     """
@@ -13,6 +16,8 @@ class Data:
 
     title : str
         text to describe the dataset
+
+        Examples: 'Iris dataset', 'Titanic dataset'
 
     profile_report : ProfileReport
         pandas_profiling report of the dataframe
@@ -36,7 +41,7 @@ class Data:
 
         1. Export the profile_report to html file
         ```
-            profile_report.to_file(output_file=html_output_file)
+            profile_report.to_file(output_file=profile_report.html)
         ```
 
         2. Display the profile_report in a notebook
@@ -50,11 +55,22 @@ class Data:
            json_data = profile_report.to_json()
 
            # As a file
-           profile_report.to_file("your_report.json")
+           profile_report.to_file("profile_report.json")
        ```
     """
 
     def __init__(self, df: DataFrame, title: str):
         self.df = df
         self.title = title
-        self.profile_report = ProfileReport(df, title=title, explorative=True)
+        self.profile_report = self.__profile_report()
+        self.__logger = get_logger('Data', LoggingLevel.DEBUG)
+
+    def __profile_report(self) -> ProfileReport:
+        title = f"Profile report : {self.title}"
+        self.__logger.debug(f"Creating profile report")
+        return ProfileReport(self.df, title=title, explorative=True)
+
+    def plot_feature_correlation(self):
+        plot_title = f"Feature correlation plot : {self.title}"
+        self.__logger.debug(f"Plotting feature correlation")
+        plot_feature_correlation(self.df, plot_title)
