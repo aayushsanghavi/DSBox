@@ -1,6 +1,7 @@
 import seaborn as sns
 from pandas import DataFrame
 import matplotlib.pyplot as plt
+
 from dsbox.utils.logging import LoggingLevel, get_logger
 
 logger = get_logger('visualisation', LoggingLevel.DEBUG)
@@ -9,9 +10,11 @@ logger = get_logger('visualisation', LoggingLevel.DEBUG)
 def plot_feature_correlation(df: DataFrame, title: str = "Feature correlation plot"):
     """
     Creates and plots the feature correlation matrix for the given dataset
+
     :param df: pandas dataframe of the dataset
     :param title: text to describe the dataset (default = 'Feature correlation plot')
     """
+
     logger.debug(f"Creating feature correlation matrix")
     correlation_matrix: DataFrame = df.corr()
     plot = sns.heatmap(correlation_matrix,

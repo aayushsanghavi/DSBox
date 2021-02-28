@@ -3,6 +3,7 @@ from pandas_profiling import ProfileReport
 
 from dsbox.data.visualisation import plot_feature_correlation
 from dsbox.utils.logging import get_logger, LoggingLevel
+from dsbox.data.cleanup import cleanup
 
 
 class Data:
@@ -18,6 +19,9 @@ class Data:
         text to describe the dataset
 
         Examples: 'Iris dataset', 'Titanic dataset'
+
+    target : str
+        name of the prediction target column
 
     profile_report : ProfileReport
         pandas_profiling report of the dataframe
@@ -59,11 +63,12 @@ class Data:
        ```
     """
 
-    def __init__(self, df: DataFrame, title: str):
+    def __init__(self, df: DataFrame, title: str, target: str):
         self.df = df
         self.title = title
-        self.profile_report = self.__profile_report()
+        self.target = target
         self.__logger = get_logger('Data', LoggingLevel.DEBUG)
+        self.profile_report = self.__profile_report()
 
     def __profile_report(self) -> ProfileReport:
         title = f"Profile report : {self.title}"
@@ -74,3 +79,7 @@ class Data:
         plot_title = f"Feature correlation plot : {self.title}"
         self.__logger.debug(f"Plotting feature correlation")
         plot_feature_correlation(self.df, plot_title)
+
+    def cleanup(self, auto=False):
+        self.__logger.debug(f"Starting dataset cleanup. Auto-mode : {auto}")
+        cleanup(self.df, auto)
