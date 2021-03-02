@@ -1,7 +1,6 @@
 from typing import List
 from pandas import DataFrame
 from itertools import chain
-import pandas as pd
 
 from dsbox.utils.logging import get_logger, LoggingLevel
 

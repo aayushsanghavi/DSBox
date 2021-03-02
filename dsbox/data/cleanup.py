@@ -50,7 +50,7 @@ def identify_columns_with_majority_missing_values(df: DataFrame, threshold: floa
 
     missing_values_count = df.isnull().sum().to_dict()
     threshold_count = round(df.shape[0] * threshold)
-    logger.debug(f"Threshold count of missing values : {threshold_count}")
+    logger.debug(f"Threshold count of missing column values : {threshold_count}")
     return [col for col, count in missing_values_count.items() if count >= threshold_count]
 
 
@@ -76,6 +76,21 @@ def __process_cleanup_action(action: str, column_list: List[str]) -> List[str]:
     return []
 
 
+def identify_rows_with_majority_missing_values(df: DataFrame, threshold: float = 0.8) -> List[int]:
+    """
+    Identifies rows in the dataframe where most columns have missing values.
+    Such data points aren't good for model learning and should be removed.
+
+    :param df: pandas dataframe of the dataset
+    :param threshold: fraction defining the minimum % of missing values in the row
+    :return: list of row indices which have more missing values than the specified threshold
+    """
+
+    threshold_count = round((df.shape[1] - 1) * threshold)  # subtracting one to account for the target column
+    logger.debug(f"Threshold count of missing row values : {threshold_count}")
+    return [idx for idx in df.index if df.iloc[idx].isnull().sum() >= threshold_count]
+
+
 def cleanup(df: DataFrame, auto=False):
     """
     Performs the following inplace cleanup operations on the dataframe:
@@ -83,9 +98,10 @@ def cleanup(df: DataFrame, auto=False):
     2. Identify features with only one unique value
     3. Identify features which could be potential identifiers
     4. Identify features with majority missing values
+    5. Identify rows with missing values
 
     Offers 2 modes of operation.
-    1. Auto -> performs auto clean up
+    1. Auto -> performs auto clean up. Default action is 'DROP_ALL' affected columns
     2. Suggestive -> takes user input on each feature cleanup operation
 
     :param df: pandas dataframe of the dataset
@@ -97,16 +113,13 @@ def cleanup(df: DataFrame, auto=False):
     logger.debug(f"Dropped duplicate rows from dataframe. Dataframe shape : {df.shape}")
 
     single_value_columns = identify_single_value_columns(df)
-    if single_value_columns:
-        logger.debug(f"Identified single value features : {single_value_columns}")
+    logger.debug(f"Identified single value features : {single_value_columns}")
 
     id_columns = identify_potential_id_columns(df)
-    if id_columns:
-        logger.debug(f"Identified id features : {id_columns}")
+    logger.debug(f"Identified id features : {id_columns}")
 
     missing_value_columns = identify_columns_with_majority_missing_values(df)
-    if missing_value_columns:
-        logger.debug(f"Identified missing value features : {id_columns}")
+    logger.debug(f"Identified missing value features : {id_columns}")
 
     columns_to_drop = []
 
@@ -123,7 +136,6 @@ def cleanup(df: DataFrame, auto=False):
             action = input(f"Features : {missing_value_columns} have majority missing values. "
                            "Actions -> DROP_ALL, NO_OP, <provide column names comma separated> ")
             columns_to_drop += __process_cleanup_action(action, missing_value_columns)
-
     else:
         columns_to_drop = single_value_columns + id_columns + missing_value_columns
 
@@ -135,3 +147,23 @@ def cleanup(df: DataFrame, auto=False):
         logger.debug(f"Dropped {len(columns_to_drop)} columns from the dataframe. Dataframe shape : {df.shape}")
     else:
         logger.debug(f"No columns to drop. Dataframe shape : {df.shape}")
+
+    missing_value_rows = identify_rows_with_majority_missing_values(df)
+    if not auto:
+        if missing_value_rows:
+            action = input(f"Rows : {missing_value_rows} have majority missing values. "
+                           "Actions -> DROP_ALL, NO_OP, <provide row indices comma separated> ")
+            if action.lower() not in ('NO_OP'.lower(), 'DROP_ALL'.lower()):
+                try:
+                    missing_value_rows = filter(lambda x: x < df.shape[0],
+                                                map(lambda x: int(x.strip()), action.split(',')))
+                    logger.debug(f"Selected row indices : {missing_value_rows}")
+                except RuntimeError:
+                    logger.error(f"Invalid action : {action}. "
+                                 "Expected 'DROP_ALL' or 'NO_OP' or comma separated list of row indices")
+    if missing_value_rows:
+        logger.debug(f"Dropping indices : {missing_value_rows} from the dataframe")
+        df.drop(index=missing_value_rows, inplace=True)
+        logger.debug(f"Dropped {len(missing_value_rows)} rows from the dataframe. Dataframe shape : {df.shape}")
+    else:
+        logger.debug(f"No rows to drop. Dataframe shape : {df.shape}")
