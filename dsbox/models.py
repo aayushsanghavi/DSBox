@@ -1,6 +1,7 @@
 from pandas import DataFrame
 from pandas_profiling import ProfileReport
 
+from dsbox.data.preprocessing import preprocess
 from dsbox.data.visualisation import plot_feature_correlation
 from dsbox.utils.logging import get_logger, LoggingLevel
 from dsbox.data.cleanup import cleanup
@@ -83,3 +84,9 @@ class Data:
     def cleanup(self, auto=False):
         self.__logger.debug(f"Starting dataset cleanup. Auto-mode : {auto}")
         cleanup(self.df, auto)
+        self.__logger.debug(f"Finished dataset cleanup. Auto-mode : {auto}")
+
+    def preprocess(self, auto=False):
+        self.__logger.debug(f"Starting dataset preprocessing. Auto-mode : {auto}")
+        preprocess(self.df, auto)
+        self.__logger.debug(f"Finished dataset preprocessing. Auto-mode : {auto}")
