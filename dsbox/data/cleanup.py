@@ -1,6 +1,6 @@
 from typing import List
-import numpy as np
 from pandas import DataFrame
+from pandas.core.dtypes.common import is_numeric_dtype
 
 from dsbox.utils.logging import get_logger, LoggingLevel
 
@@ -16,7 +16,7 @@ def identify_single_value_columns(df: DataFrame) -> List[str]:
     :return: list of columns with only one unique feature value
     """
 
-    return [column for column in df.columns if len(df[column].unique()) == 1]
+    return [column for column in df.columns if len(df[column].dropna().unique()) == 1]
 
 
 def __is_identifier_column_name(column_name: str) -> bool:
@@ -26,7 +26,7 @@ def __is_identifier_column_name(column_name: str) -> bool:
 def identify_potential_id_columns(df: DataFrame) -> List[str]:
     """
     Returns a list of features in the dataset which could be potential numeric identifiers.
-    Matching is done based on the datatype of the column -> should be int or long
+    Matching is done based on the datatype of the column -> should be a numeric type
     and the column name should match contain 'ID' or 'Id' or '_id'.
     Identifier features don't contribute to model learning and should be removed.
 
@@ -35,7 +35,7 @@ def identify_potential_id_columns(df: DataFrame) -> List[str]:
     """
 
     return [column for column in df.columns
-            if df[column].dtypes in (np.int32, np.int64) and __is_identifier_column_name(column)]
+            if is_numeric_dtype(df[column].dropna()) and __is_identifier_column_name(column)]
 
 
 def identify_columns_with_majority_missing_values(df: DataFrame, threshold: float = 0.8) -> List[str]:
@@ -129,7 +129,7 @@ def cleanup(df: DataFrame, auto=False):
                            f"Actions -> DROP_ALL, NO_OP, <provide column names comma separated> ")
             columns_to_drop += __process_cleanup_action(action, single_value_columns)
         if id_columns:
-            action = input(f"Features : {id_columns} are potential integer identifier columns. "
+            action = input(f"Features : {id_columns} are potential numeric identifier columns. "
                            "Actions -> DROP_ALL, NO_OP, <provide column names comma separated> ")
             columns_to_drop += __process_cleanup_action(action, id_columns)
         if missing_value_columns:

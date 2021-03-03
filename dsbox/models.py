@@ -24,6 +24,8 @@ class Data:
     target : str
         name of the prediction target column
 
+    Methods
+    -------
     profile_report : ProfileReport
         pandas_profiling report of the dataframe
 
@@ -69,12 +71,12 @@ class Data:
         self.title = title
         self.target = target
         self.__logger = get_logger('Data', LoggingLevel.DEBUG)
-        self.profile_report = self.__profile_report()
 
-    def __profile_report(self) -> ProfileReport:
+    @property
+    def profile_report(self) -> ProfileReport:
         title = f"Profile report : {self.title}"
         self.__logger.debug(f"Creating profile report")
-        return ProfileReport(self.df, title=title, explorative=True)
+        return ProfileReport(self.df, title=title, explorative=True, progress_bar=False)
 
     def plot_feature_correlation(self):
         plot_title = f"Feature correlation plot : {self.title}"
